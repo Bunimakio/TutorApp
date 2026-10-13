@@ -374,7 +374,7 @@ function handleClose(): void {
       />
 
       <!-- Día y Hora en fila -->
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Select
           v-model="selectedDay"
           :options="dayOptions"
@@ -398,7 +398,7 @@ function handleClose(): void {
       </div>
 
       <!-- Duración y Fecha -->
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Select
           v-model="form.values.duration_minutes"
           :options="durationOptions"

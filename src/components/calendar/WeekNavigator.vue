@@ -26,8 +26,8 @@ const weekRange = computed(() => {
 </script>
 
 <template>
-  <div class="flex items-center justify-between px-4 py-3 bg-surface border-b border-gray-200">
-    <div class="flex items-center gap-4">
+  <div class="flex items-center justify-between gap-2 px-2 sm:px-4 py-2 sm:py-3 bg-surface border-b border-gray-200">
+    <div class="flex items-center gap-1 sm:gap-4 min-w-0">
       <Button
         variant="ghost"
         size="sm"
@@ -35,9 +35,9 @@ const weekRange = computed(() => {
         @click="$emit('navigate', 'prev')"
         aria-label="Semana anterior"
       />
-      <div class="text-center min-w-[200px]">
-        <p class="text-sm font-medium text-gray-900">{{ weekRange }}</p>
-        <p class="text-xs text-gray-500">Semana del {{ format(classesStore.currentWeek.start, 'dd/MM', { locale: es }) }}</p>
+      <div class="text-center min-w-0">
+        <p class="text-sm font-medium text-gray-900 truncate">{{ weekRange }}</p>
+        <p class="hidden sm:block text-xs text-gray-500">Semana del {{ format(classesStore.currentWeek.start, 'dd/MM', { locale: es }) }}</p>
       </div>
       <Button
         variant="ghost"

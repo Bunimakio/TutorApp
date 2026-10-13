@@ -83,11 +83,11 @@ function handleGoToToday(): void {
     />
 
     <!-- Indicador de sync -->
-    <div class="px-4 py-2 flex items-center justify-between border-b border-gray-200 bg-surface">
-      <div class="flex items-center gap-3">
+    <div class="px-2 sm:px-4 py-1.5 sm:py-2 flex items-center justify-between border-b border-gray-200 bg-surface">
+      <div class="flex items-center gap-1.5 sm:gap-3">
         <span
           :class="[
-            'flex items-center gap-1.5 text-sm px-2 py-1 rounded-full',
+            'flex items-center gap-1.5 text-xs sm:text-sm px-2 py-1 rounded-full',
             syncStore.isOnline ? 'bg-green-50 text-green-700' : 'bg-orange-50 text-orange-700'
           ]"
         >
@@ -98,12 +98,12 @@ function handleGoToToday(): void {
           {{ syncStore.statusText }}
         </span>
 
-        <span v-if="syncStore.isSyncing" class="flex items-center gap-1.5 text-sm text-blue-700 bg-blue-50 px-2 py-1 rounded-full">
+        <span v-if="syncStore.isSyncing" class="flex items-center gap-1.5 text-xs sm:text-sm text-blue-700 bg-blue-50 px-2 py-1 rounded-full">
           <RefreshCw class="w-4 h-4 animate-spin" />
           Sincronizando...
         </span>
 
-        <span v-else-if="syncStore.pendingCount > 0" class="flex items-center gap-1.5 text-sm text-yellow-700 bg-yellow-50 px-2 py-1 rounded-full">
+        <span v-else-if="syncStore.pendingCount > 0" class="flex items-center gap-1.5 text-xs sm:text-sm text-yellow-700 bg-yellow-50 px-2 py-1 rounded-full">
           <AlertCircle class="w-4 h-4" />
           {{ syncStore.pendingCount }} cambios pendientes
         </span>
@@ -119,7 +119,7 @@ function handleGoToToday(): void {
     </div>
 
     <!-- Grid del calendario -->
-    <div class="flex-1 overflow-auto p-4">
+    <div class="flex-1 overflow-auto p-2 sm:p-4">
       <CalendarGrid
         @cell-click="handleCellClick"
         @class-click="handleClassClick"
