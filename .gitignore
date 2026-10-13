@@ -1,0 +1,34 @@
+# Dependencias
+node_modules/
+
+# Compilado (se genera con el build, no se versiona)
+dist/
+dist-ssr/
+
+# Variables de entorno — NUNCA subir credenciales
+.env
+.env.local
+.env.*.local
+*.local
+
+# Paquete de subida a mano (solo respaldo)
+tutorapp-pages.zip
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editores y sistema operativo
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
