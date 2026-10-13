@@ -15,6 +15,8 @@ const props = defineProps<{
   student: any;
   stats: any;
   recentClasses: any[];
+  /** Total abonado histórico por el alumno (todas las clases pagadas). */
+  paidTotal?: number;
 }>();
 
 const emit = defineEmits<{
@@ -31,7 +33,8 @@ const totalPending = computed(() => {
 });
 
 const totalPaid = computed(() => {
-  return (props.stats?.paid_last_30_days || 0);
+  // Total abonado histórico (si no está disponible, lo que informa el servidor).
+  return (props.paidTotal ?? props.stats?.paid_last_30_days ?? 0);
 });
 
 function formatCurrency(amount: number): string {
@@ -137,8 +140,8 @@ function timeToMinutes(timeStr: string): number {
       <Card>
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-500">Pagado (30 días)</p>
-            <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ formatCurrency(props.stats?.paid_last_30_days || 0) }}</p>
+            <p class="text-sm text-gray-500">Total abonado</p>
+            <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ formatCurrency(totalPaid) }}</p>
           </div>
           <div class="p-3 bg-emerald-100 rounded-xl text-emerald-600">
             <DollarSign class="w-6 h-6" />
@@ -154,7 +157,13 @@ function timeToMinutes(timeStr: string): number {
         <p class="font-medium text-yellow-800">Pendiente de cobro</p>
         <p class="text-sm text-yellow-700">{{ formatCurrency(totalPending) }} en clases no pagadas</p>
       </div>
-      <Button variant="outline" size="sm" class="text-yellow-700 border-yellow-300 hover:bg-yellow-100">Ver pagos</Button>
+    </div>
+    <div v-else class="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl">
+      <CheckCircle class="w-6 h-6 text-green-600 flex-shrink-0" />
+      <div class="flex-1">
+        <p class="font-medium text-green-800">Al día</p>
+        <p class="text-sm text-green-700">No hay pagos pendientes</p>
+      </div>
     </div>
 
     <!-- Tabs -->
@@ -259,7 +268,7 @@ function timeToMinutes(timeStr: string): number {
         <h3 class="font-semibold text-gray-900 mb-4">Resumen de pagos</h3>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div class="p-4 bg-green-50 rounded-lg">
-            <p class="text-sm text-green-700">Pagado (30 días)</p>
+            <p class="text-sm text-green-700">Total abonado</p>
             <p class="text-2xl font-bold text-green-900">{{ formatCurrency(totalPaid) }}</p>
           </div>
           <div class="p-4 bg-yellow-50 rounded-lg">

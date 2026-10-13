@@ -16,6 +16,11 @@ const showMobileDetail = ref(false);
 
 onMounted(async () => {
   await studentsStore.fetchAll();
+  // Al volver a esta sección refrescamos los datos del alumno abierto (por si se
+  // confirmó algún pago desde el calendario).
+  if (studentsStore.selectedStudent?.id) {
+    await studentsStore.fetchWithStats(studentsStore.selectedStudent.id);
+  }
 });
 
 async function handleStudentSelect(student: any): Promise<void> {
@@ -106,6 +111,7 @@ async function handleNewClassForStudent(student: any): Promise<void> {
             :student="studentsStore.selectedStudent"
             :stats="studentsStore.studentStats"
             :recent-classes="studentsStore.recentClasses"
+            :paid-total="studentsStore.paidTotal"
             @edit="handleEditStudent"
             @new-class="handleNewClassForStudent"
             @view-classes="handleNewClassForStudent"

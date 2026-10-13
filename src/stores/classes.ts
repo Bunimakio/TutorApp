@@ -263,7 +263,7 @@ export const useClassesStore = defineStore('classes', () => {
       start_time: formData.start_time,
       end_time: endTime,
       date: formData.date,
-      status: 'pending' as const,
+      status: (formData.paid ? 'paid' : 'pending') as 'paid' | 'pending',
       notes: formData.notes || null,
     };
 
@@ -313,7 +313,7 @@ export const useClassesStore = defineStore('classes', () => {
     }
   }
 
-  async function update(id: string, updates: Partial<ClassSession>): Promise<ClassSession | null> {
+  async function update(id: string, updates: Partial<ClassSession> & Partial<ClassFormData>): Promise<ClassSession | null> {
     loading.value = true;
     error.value = null;
 
@@ -324,13 +324,37 @@ export const useClassesStore = defineStore('classes', () => {
       return null;
     }
 
-    // Si cambia horario/día, validar conflicto
-    if (updates.day_of_week || updates.start_time || updates.end_time || updates.date) {
-      const day = updates.day_of_week || existingClass.day_of_week;
-      const start = updates.start_time || existingClass.start_time;
-      const end = updates.end_time || existingClass.end_time;
-      const date = updates.date || existingClass.date;
+    // Payload solo con columnas reales de la tabla `classes`. El formulario trae
+    // campos extra (student_name, student_email, duration_minutes) que la API
+    // rechaza; acá la duración se convierte en end_time.
+    const payload: Record<string, any> = {};
+    if (updates.subject_id !== undefined) payload.subject_id = updates.subject_id;
+    if (updates.day_of_week !== undefined) payload.day_of_week = updates.day_of_week;
+    if (updates.start_time !== undefined) payload.start_time = updates.start_time;
+    if (updates.date !== undefined) payload.date = updates.date;
+    if (updates.notes !== undefined) payload.notes = updates.notes || null;
+    if (updates.end_time !== undefined) {
+      payload.end_time = updates.end_time;
+    } else if (updates.duration_minutes !== undefined && updates.start_time !== undefined) {
+      payload.end_time = addMinutes(updates.start_time, updates.duration_minutes);
+    }
 
+    // Estado del pago: confirmarlo es definitivo, después no se puede deshacer.
+    // Si la clase ya estaba pagada o cancelada, no la "bajamos" a pendiente.
+    if (updates.paid === true) {
+      payload.status = 'paid';
+    } else if (existingClass.status === 'pending') {
+      payload.status = 'pending';
+    }
+
+    // Si cambia horario/día/fecha, validar conflicto
+    const day = payload.day_of_week || existingClass.day_of_week;
+    const start = payload.start_time || existingClass.start_time;
+    const end = payload.end_time || existingClass.end_time;
+    const date = payload.date || existingClass.date;
+
+    if (day !== existingClass.day_of_week || start !== existingClass.start_time ||
+        end !== existingClass.end_time || date !== existingClass.date) {
       const hasConflict = await checkConflict(day, start, end, date, id);
       if (hasConflict) {
         error.value = 'Ya existe una clase en ese horario';
@@ -340,7 +364,7 @@ export const useClassesStore = defineStore('classes', () => {
     }
 
     try {
-      const { data, error: err } = await db.classes.update(id, updates);
+      const { data, error: err } = await db.classes.update(id, payload);
       if (err) throw err;
 
       const updated = normalizeClass({ ...data, _synced: true } as ClassSession);
@@ -353,12 +377,9 @@ export const useClassesStore = defineStore('classes', () => {
       }
       await offlineClasses.put(updated);
 
-      // Actualizar stats si cambió alumno o status
-      if (updates.student_id || updates.status) {
+      // Actualizar stats del alumno si cambió el estado del pago
+      if (payload.status && payload.status !== existingClass.status) {
         await studentsStore.fetchWithStats(updated.student_id);
-        if (existingClass.student_id !== updated.student_id) {
-          await studentsStore.fetchWithStats(existingClass.student_id);
-        }
       }
 
       return updated;
@@ -366,7 +387,7 @@ export const useClassesStore = defineStore('classes', () => {
       // Offline
       const idx = classes.value.findIndex(c => c.id === id);
       if (idx !== -1) {
-        const updated = { ...classes.value[idx], ...updates, updated_at: new Date().toISOString(), _synced: false };
+        const updated = { ...classes.value[idx], ...payload, updated_at: new Date().toISOString(), _synced: false };
         classes.value[idx] = updated;
         if (selectedClass.value?.id === id) {
           selectedClass.value = updated;
@@ -384,6 +405,12 @@ export const useClassesStore = defineStore('classes', () => {
   async function updateStatus(id: string, status: 'pending' | 'paid' | 'cancelled'): Promise<boolean> {
     const existingClass = classes.value.find(c => c.id === id);
     if (!existingClass) return false;
+
+    // El pago confirmado es definitivo: una clase pagada no vuelve atrás.
+    if (existingClass.status === 'paid' && status !== 'paid') {
+      error.value = 'El pago de esta clase ya está confirmado y no se puede deshacer';
+      return false;
+    }
 
     try {
       const { error: err } = await db.classes.updateStatus(id, status);

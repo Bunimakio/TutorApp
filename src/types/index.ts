@@ -58,6 +58,8 @@ export interface ClassFormData {
   duration_minutes: 30 | 60 | 90 | 120;
   date: string; // YYYY-MM-DD
   notes?: string;
+  /** Pago confirmado (abonado). Una vez guardado como pagado no se puede deshacer. */
+  paid?: boolean;
 }
 
 export interface StudentStats {

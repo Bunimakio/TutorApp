@@ -12,6 +12,8 @@ export const useStudentsStore = defineStore('students', () => {
   const selectedStudent = ref<Student | null>(null);
   const studentStats = ref<StudentStats | null>(null);
   const recentClasses = ref<any[]>([]);
+  // Monto total abonado por el alumno (todas sus clases pagadas, sin límite de fecha)
+  const paidTotal = ref(0);
   const loading = ref(false);
   const error = ref<string | null>(null);
   const filters = ref<StudentFilters>({
@@ -100,6 +102,28 @@ export const useStudentsStore = defineStore('students', () => {
     }
   }
 
+  // Convierte "HH:MM" o "HH:MM:SS" (formato de Supabase) a minutos.
+  function timeToMinutes(time: string): number {
+    const [h, m] = String(time || '0:0').split(':');
+    return parseInt(h, 10) * 60 + parseInt(m, 10);
+  }
+
+  // Total abonado = suma de todas las clases pagadas del alumno (sin límite de fecha).
+  async function fetchPaidTotal(studentId: string, fallback: number): Promise<number> {
+    try {
+      const { data, error: err } = await db.classes.getPaidByStudent(studentId);
+      if (err) throw err;
+      const total = (data || []).reduce((sum: number, c: any) => {
+        const hours = (timeToMinutes(c.end_time) - timeToMinutes(c.start_time)) / 60;
+        return sum + (c.subject?.price || 0) * hours;
+      }, 0);
+      return Math.round(total * 100) / 100;
+    } catch (e) {
+      console.warn('No se pudo calcular el total abonado, uso el del servidor:', e);
+      return fallback;
+    }
+  }
+
   async function fetchWithStats(studentId: string): Promise<{ student: Student; stats: StudentStats } | null> {
     loading.value = true;
     error.value = null;
@@ -142,6 +166,9 @@ export const useStudentsStore = defineStore('students', () => {
       };
       recentClasses.value = classesData || [];
 
+      // Total abonado histórico (si no se puede calcular, usa el del servidor).
+      paidTotal.value = await fetchPaidTotal(studentId, stats.paid_last_30_days || 0);
+
       return { student: enrichedStudent, stats: studentStats.value };
     } catch (e) {
       console.warn('Error fetching student stats, using offline:', e);
@@ -161,6 +188,7 @@ export const useStudentsStore = defineStore('students', () => {
           last_class_date: student.last_class_date || null,
           recent_classes: [],
         };
+        paidTotal.value = student.paid_last_month || 0;
         return { student, stats: studentStats.value };
       }
       error.value = e instanceof Error ? e.message : 'Error al cargar alumno';
@@ -276,6 +304,7 @@ export const useStudentsStore = defineStore('students', () => {
         selectedStudent.value = null;
         studentStats.value = null;
         recentClasses.value = [];
+        paidTotal.value = 0;
       }
       await offlineStudents.delete(id);
       return true;
@@ -301,6 +330,7 @@ export const useStudentsStore = defineStore('students', () => {
     selectedStudent.value = null;
     studentStats.value = null;
     recentClasses.value = [];
+    paidTotal.value = 0;
   }
 
   return {
@@ -309,6 +339,7 @@ export const useStudentsStore = defineStore('students', () => {
     selectedStudent,
     studentStats,
     recentClasses,
+    paidTotal,
     loading,
     error,
     filters,

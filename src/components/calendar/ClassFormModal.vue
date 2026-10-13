@@ -10,7 +10,7 @@ import Modal from '@/components/ui/Modal.vue';
 import Input from '@/components/ui/Input.vue';
 import Select from '@/components/ui/Select.vue';
 import Button from '@/components/ui/Button.vue';
-import { User, Mail, Calendar, Clock, BookOpen, UserPlus } from 'lucide-vue-next';
+import { User, Mail, Calendar, Clock, BookOpen, UserPlus, CheckCircle } from 'lucide-vue-next';
 
 const props = defineProps<{
   modelValue: boolean;
@@ -43,6 +43,7 @@ const form = useForm<ClassFormData>({
   duration_minutes: 60,
   date: '',
   notes: '',
+  paid: false,
 });
 
 const validationRules = {
@@ -73,6 +74,15 @@ const durationOptions = [
 
 const subjectOptions = computed(() =>
   subjectsStore.subjects.map(s => ({ value: s.id, label: `${s.name} (${s.price.toFixed(2)}€/h)` }))
+);
+
+// Estado del pago en el formulario.
+const isPaid = computed(() => form.values.paid === true);
+// Si la clase ya está pagada, el pago queda bloqueado (no se puede deshacer).
+// Si está cancelada, tampoco se puede confirmar el pago.
+const paymentLocked = computed(() => props.mode === 'edit' && props.initialData?.status === 'paid');
+const paymentDisabled = computed(() =>
+  props.mode === 'edit' && (props.initialData?.status === 'paid' || props.initialData?.status === 'cancelled')
 );
 
 // El día de la semana y la fecha van siempre juntos: al elegir un día se calcula
@@ -159,6 +169,7 @@ function resetForm(): void {
     duration_minutes: 60,
     date: '',
     notes: '',
+    paid: false,
   });
   selectedStudent.value = null;
   showStudentSearch.value = false;
@@ -178,6 +189,7 @@ function populateForm(): void {
       duration_minutes: duration as 30 | 60 | 90 | 120,
       date: c.date,
       notes: c.notes || '',
+      paid: c.status === 'paid',
     });
 
     selectedStudent.value = c.student ? {
@@ -414,6 +426,38 @@ function handleClose(): void {
           label="Fecha de la clase"
           icon="Calendar"
         />
+      </div>
+
+      <!-- Pago (confirmar el pago es definitivo, no se puede deshacer) -->
+      <div
+        class="rounded-lg border p-3"
+        :class="isPaid ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'"
+      >
+        <label class="flex items-start gap-3" :class="paymentDisabled ? 'cursor-default' : 'cursor-pointer'">
+          <input
+            v-model="form.values.paid"
+            type="checkbox"
+            :disabled="paymentDisabled"
+            class="mt-0.5 h-4 w-4 flex-shrink-0 rounded border-gray-300 text-green-600 focus:ring-green-500 disabled:opacity-60"
+          />
+          <span class="min-w-0">
+            <span class="flex items-center gap-1.5 text-sm font-medium" :class="isPaid ? 'text-green-800' : 'text-gray-900'">
+              <CheckCircle v-if="isPaid" class="w-4 h-4 flex-shrink-0 text-green-600" />
+              Abonado (pago confirmado)
+            </span>
+            <span class="block text-xs text-gray-500 mt-0.5">
+              <template v-if="paymentLocked">
+                El pago de esta clase ya está confirmado y no se puede deshacer.
+              </template>
+              <template v-else-if="paymentDisabled">
+                La clase está cancelada, no se puede confirmar el pago.
+              </template>
+              <template v-else>
+                Marcá esta casilla cuando el alumno pague. Una vez guardada no se puede deshacer.
+              </template>
+            </span>
+          </span>
+        </label>
       </div>
 
       <!-- Notas -->

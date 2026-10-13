@@ -199,6 +199,18 @@ export const db = {
         .order('start_time', { ascending: false })
         .limit(limit),
 
+    // Todas las clases pagadas de un alumno (para el total abonado histórico).
+    getPaidByStudent: (studentId: string) =>
+      supabase
+        .from('classes')
+        .select(`
+          start_time,
+          end_time,
+          subject:subjects(price)
+        `)
+        .eq('student_id', studentId)
+        .eq('status', 'paid'),
+
     checkConflict: (dayOfWeek: number, startTime: string, endTime: string, date: string, excludeId?: string) => {
       let query = supabase
         .from('classes')
