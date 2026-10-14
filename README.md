@@ -58,13 +58,11 @@ La sección **Pagos** (en el menú, entre Asignaturas y Configuración) tiene do
 - **Últimos pagos**: las 10 clases más recientes (pagadas y pendientes; las canceladas
   no se muestran) con fecha y hora, alumno, asignatura, monto y condición. Se pueden
   filtrar por alumno, asignatura o fecha.
-- **Informe del mes**: un resumen imprimible con encabezado (nombre de la app, usuario,
-  fecha y período), todas las clases del mes ordenadas por fecha y un cuadro destacado
-  con el total ganado, lo pendiente de cobro, las horas y la cantidad de clases.
-
-El botón **Imprimir / Guardar PDF** abre el diálogo del navegador: la hoja del informe es
-lo único que se imprime (el resto de la app queda oculto), así que se puede elegir
-"Guardar como PDF". El mes del informe se puede cambiar con el selector.
+- **Informe del mes** (no se muestra en la página): el botón **Imprimir / Guardar PDF**
+  genera un documento aparte con encabezado (nombre de la app, usuario, fecha y período),
+  todas las clases del mes ordenadas por fecha y un cuadro destacado con el total ganado,
+  lo pendiente de cobro, las horas y la cantidad de clases. Luego se elige
+  "Guardar como PDF" en el diálogo del navegador. El mes se puede cambiar con el selector.
 
 ## Pruebas
 

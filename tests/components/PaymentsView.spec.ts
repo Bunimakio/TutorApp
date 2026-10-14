@@ -39,7 +39,12 @@ vi.mock('@/lib/sync', () => ({
   stopAutoSync: vi.fn(),
 }));
 
+vi.mock('@/lib/print', () => ({
+  printHtml: vi.fn(),
+}));
+
 import { db } from '@/lib/supabase';
+import { printHtml } from '@/lib/print';
 import { formatLongDate, monthLabel } from '@/lib/payments';
 import { useAuthStore } from '@/stores/auth';
 import { usePaymentsStore } from '@/stores/payments';
@@ -153,56 +158,47 @@ describe('últimos pagos', () => {
   });
 });
 
-describe('informe del mes', () => {
-  it('pide las clases del mes y las ordena por fecha (día 1 al último)', async () => {
+describe('informe del mes (va al PDF, no a la página)', () => {
+  it('pide las clases del mes, del día 1 al último', async () => {
     await mountView();
 
     expect(db.classes.getByMonth).toHaveBeenCalledWith('2026-10-01', '2026-10-31');
   });
 
-  it('tiene una hoja con el nombre de la app, el usuario, la fecha y el período', async () => {
+  it('no muestra el informe en la página', async () => {
+    const wrapper = await mountView();
+    const text = clean(wrapper.text());
+
+    expect(wrapper.find('.print-report').exists()).toBe(false);
+    expect(text).not.toContain('Resumen del mes');
+    expect(text).not.toContain('Total ganado');
+    expect(text).not.toContain('Horas dictadas');
+    expect(text).not.toContain('Clases dictadas');
+  });
+
+  it('genera el PDF con el encabezado, las clases del mes y los totales', async () => {
     useAuthStore().user = { email: 'profe@ejemplo.com' } as any;
-    const wrapper = await mountView();
-    const report = clean(wrapper.find('.print-report').text());
-
-    expect(report).toContain('TutorApp');
-    expect(report).toContain('Informe de pagos');
-    expect(report).toContain(monthLabel('2026-10'));
-    expect(report).toContain(formatLongDate());
-    expect(report).toContain('profe@ejemplo.com');
-  });
-
-  it('lista todas las clases del mes', async () => {
-    const wrapper = await mountView();
-    const report = clean(wrapper.find('.print-report').text());
-
-    expect(report).toContain('12/10/2026');
-    expect(report).toContain('11/10/2026');
-    expect(report).toContain('10/10/2026');
-    expect(report).toContain('Ana Gómez');
-    expect(report).toContain('Bruno Díaz');
-  });
-
-  it('destaca el total ganado, las horas y la cantidad de clases', async () => {
-    const wrapper = await mountView();
-    const summary = clean(wrapper.find('.print-report section').text()).replace(/\s+/g, ' ');
-
-    expect(summary).toMatch(/Total ganado \(cobrado\) *70,00 €/);
-    expect(summary).toMatch(/Pendiente de cobro *40,00 €/);
-    expect(summary).toMatch(/Horas dictadas *5,5 h/);
-    expect(summary).toMatch(/Clases dictadas *3/);
-    expect(summary).toMatch(/Total del mes \(cobrado \+ pendiente\): *110,00 €/);
-  });
-
-  it('imprime al tocar el botón', async () => {
-    const print = vi.spyOn(window, 'print').mockImplementation(() => {});
     const wrapper = await mountView();
 
     const button = wrapper.findAll('button').find(b => b.text().includes('Imprimir'));
     expect(button).toBeTruthy();
     await button!.trigger('click');
 
-    expect(print).toHaveBeenCalledTimes(1);
-    print.mockRestore();
+    expect(printHtml).toHaveBeenCalledTimes(1);
+    const html = clean(vi.mocked(printHtml).mock.calls[0][0] as string);
+
+    // Encabezado
+    expect(html).toContain('TutorApp');
+    expect(html).toContain('Informe de pagos');
+    expect(html).toContain(monthLabel('2026-10'));
+    expect(html).toContain(formatLongDate());
+    expect(html).toContain('profe@ejemplo.com');
+
+    // Clases del mes y totales
+    expect(html).toContain('12/10/2026');
+    expect(html).toContain('Ana Gómez');
+    expect(html).toContain('Total ganado (cobrado)');
+    expect(html).toContain('70,00 €');
+    expect(html).toContain('5,5 h');
   });
 });

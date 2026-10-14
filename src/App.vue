@@ -121,6 +121,7 @@ function handleSignOut(): void {
                 { path: '/', icon: LayoutDashboard, label: 'Calendario' },
                 { path: '/admin', icon: Users, label: 'Alumnos' },
                 { path: '/subjects', icon: BookOpen, label: 'Asignaturas' },
+                { path: '/payments', icon: Wallet, label: 'Pagos' },
                 { path: '/settings', icon: Settings, label: 'Configuración' }
               ]"
               :key="route.path"

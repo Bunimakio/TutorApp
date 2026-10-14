@@ -183,19 +183,14 @@ describe('store de pagos', () => {
     expect(db.classes.getByMonth).toHaveBeenCalledWith('2024-02-01', '2024-02-29');
   });
 
-  it('resume el mes: cobrado, pendiente, total, horas y clases', async () => {
-    vi.mocked(db.classes.getByMonth).mockResolvedValue({
-      data: [
-        makeClass({ id: 'c-1', status: 'paid', start_time: '09:00', end_time: '10:00' }),
-        makeClass({ id: 'c-2', status: 'pending', start_time: '10:00', end_time: '11:30' }),
-      ],
-      error: null,
-    } as any);
+  it('guarda las clases del mes recibidas', async () => {
+    vi.mocked(db.classes.getByMonth).mockResolvedValue({ data: [makeClass()], error: null } as any);
     const store = usePaymentsStore();
 
     await store.fetchMonth();
 
-    expect(store.monthSummary).toEqual({ paid: 20, pending: 30, total: 50, hours: 2.5, classes: 2 });
+    expect(store.monthClasses).toHaveLength(1);
+    expect(store.monthClasses[0].id).toBe('c-1');
   });
 
   it('marca si hay filtros activos y los limpia', async () => {

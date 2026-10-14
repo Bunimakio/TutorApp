@@ -6,19 +6,19 @@ import { useSubjectsStore } from '@/stores/subjects';
 import { useAuthStore } from '@/stores/auth';
 import {
   classAmount,
-  classHours,
   formatCurrency,
   formatDate,
-  formatHours,
   formatLongDate,
   formatTime,
   monthLabel,
 } from '@/lib/payments';
+import { buildPaymentsReportHtml } from '@/lib/payments-report';
+import { printHtml } from '@/lib/print';
 import Card from '@/components/ui/Card.vue';
 import Badge from '@/components/ui/Badge.vue';
 import Button from '@/components/ui/Button.vue';
 import Select from '@/components/ui/Select.vue';
-import { Filter, RefreshCw, Wallet } from 'lucide-vue-next';
+import { Filter, Printer, RefreshCw, Wallet } from 'lucide-vue-next';
 
 const paymentsStore = usePaymentsStore();
 const studentsStore = useStudentsStore();
@@ -59,7 +59,14 @@ watch(
 );
 
 function handlePrint(): void {
-  window.print();
+  const html = buildPaymentsReportHtml({
+    classes: paymentsStore.monthClasses,
+    monthLabel: monthLabel(paymentsStore.month),
+    generatedAt: formatLongDate(),
+    user: userLabel(),
+  });
+
+  printHtml(html);
 }
 </script>
 
@@ -67,7 +74,7 @@ function handlePrint(): void {
   <div class="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
     <div class="max-w-5xl mx-auto space-y-8">
       <!-- Encabezado -->
-      <header class="no-print flex items-start gap-4">
+      <header class="flex items-start gap-4">
         <div class="w-11 h-11 rounded-xl bg-primary-100 flex items-center justify-center text-primary-600 flex-shrink-0">
           <Wallet class="w-6 h-6" />
         </div>
@@ -78,7 +85,7 @@ function handlePrint(): void {
       </header>
 
       <!-- Últimos pagos -->
-      <section class="no-print space-y-4">
+      <section class="space-y-4">
         <div class="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 class="text-lg font-semibold text-gray-900">Últimos pagos</h2>
@@ -131,7 +138,7 @@ function handlePrint(): void {
         </Card>
       </section>
 
-      <Card padding="none" class="no-print overflow-hidden">
+      <Card padding="none" class="overflow-hidden">
         <div v-if="paymentsStore.loading" class="flex items-center gap-3 p-8 text-gray-500">
           <RefreshCw class="w-5 h-5 animate-spin" />
           Cargando pagos...
@@ -178,16 +185,21 @@ function handlePrint(): void {
         </div>
       </Card>
 
-      <!-- Informe del mes -->
-      <section class="space-y-4">
-        <div class="no-print flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 class="text-lg font-semibold text-gray-900">Informe del mes</h2>
-            <p class="text-gray-500 text-sm mt-1">
-              Resumen de todas las clases del mes, listo para imprimir o guardar como PDF.
-            </p>
+      <!-- Informe del mes: solo se genera el PDF, no se muestra en la página -->
+      <Card>
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center text-primary-600 flex-shrink-0">
+              <Printer class="w-5 h-5" />
+            </div>
+            <div>
+              <h2 class="text-lg font-semibold text-gray-900">Informe del mes</h2>
+              <p class="text-gray-500 text-sm mt-0.5">
+                PDF con todas las clases del mes, el total ganado, las horas y la cantidad de clases.
+              </p>
+            </div>
           </div>
-          <div class="flex flex-wrap items-center gap-2">
+          <div class="flex flex-wrap items-end gap-2">
             <div>
               <label for="informe-mes" class="block text-sm font-medium text-gray-700 mb-1">Mes</label>
               <input
@@ -198,8 +210,8 @@ function handlePrint(): void {
               />
             </div>
             <Button
-              icon="Printer"
-              class="gap-1.5 self-end"
+              :icon="Printer"
+              class="gap-1.5"
               :loading="paymentsStore.monthLoading"
               @click="handlePrint"
             >
@@ -207,110 +219,7 @@ function handlePrint(): void {
             </Button>
           </div>
         </div>
-
-        <!-- Hoja del informe: es lo único que sale en la impresión -->
-        <article class="print-report bg-white text-[#111827] rounded-xl border border-[#e5e7eb] shadow-sm p-6 sm:p-8">
-          <header class="flex flex-wrap items-start justify-between gap-4 border-b-2 border-primary-500 pb-5 mb-6">
-            <div class="flex items-center gap-3">
-              <div class="w-11 h-11 rounded-xl bg-primary-500 flex items-center justify-center text-white font-bold text-lg">
-                T
-              </div>
-              <div>
-                <p class="text-xl font-bold leading-tight">TutorApp</p>
-                <p class="text-sm text-[#6b7280]">Informe de pagos</p>
-              </div>
-            </div>
-            <div class="text-sm text-[#4b5563] sm:text-right">
-              <p><span class="font-semibold text-[#111827]">Período:</span> {{ monthLabel(paymentsStore.month) }}</p>
-              <p><span class="font-semibold text-[#111827]">Fecha del informe:</span> {{ formatLongDate() }}</p>
-              <p><span class="font-semibold text-[#111827]">Usuario:</span> {{ userLabel() }}</p>
-            </div>
-          </header>
-
-          <div v-if="paymentsStore.monthLoading" class="py-6 text-center text-[#6b7280]">Cargando el informe...</div>
-
-          <template v-else>
-            <p v-if="paymentsStore.monthClasses.length === 0" class="py-6 text-center text-[#6b7280]">
-              No hubo clases en {{ monthLabel(paymentsStore.month) }}.
-            </p>
-
-            <table v-else class="w-full text-sm">
-              <thead>
-                <tr class="bg-[#f9fafb] text-left text-xs uppercase tracking-wide text-[#6b7280]">
-                  <th class="py-2 px-3 font-semibold">Fecha</th>
-                  <th class="py-2 px-3 font-semibold">Hora</th>
-                  <th class="py-2 px-3 font-semibold">Alumno</th>
-                  <th class="py-2 px-3 font-semibold">Asignatura</th>
-                  <th class="py-2 px-3 font-semibold text-right">Duración</th>
-                  <th class="py-2 px-3 font-semibold text-right">Monto</th>
-                  <th class="py-2 px-3 font-semibold">Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="cls in paymentsStore.monthClasses"
-                  :key="cls.id"
-                  class="border-b border-[#e5e7eb]"
-                >
-                  <td class="py-2 px-3 whitespace-nowrap">{{ formatDate(cls.date) }}</td>
-                  <td class="py-2 px-3 whitespace-nowrap text-[#4b5563]">{{ formatTime(cls.start_time) }}</td>
-                  <td class="py-2 px-3">{{ cls.student?.full_name || 'Alumno' }}</td>
-                  <td class="py-2 px-3 text-[#4b5563]">{{ cls.subject?.name || 'Sin asignatura' }}</td>
-                  <td class="py-2 px-3 text-right whitespace-nowrap text-[#4b5563]">
-                    {{ formatHours(classHours(cls)) }} h
-                  </td>
-                  <td class="py-2 px-3 text-right whitespace-nowrap font-medium tabular-nums">
-                    {{ formatCurrency(classAmount(cls)) }}
-                  </td>
-                  <td class="py-2 px-3">
-                    <span
-                      class="inline-block px-2 py-0.5 rounded-full text-xs font-semibold"
-                      :class="cls.status === 'paid'
-                        ? 'bg-[#dcfce7] text-[#166534]'
-                        : 'bg-[#fef3c7] text-[#92400e]'"
-                    >
-                      {{ cls.status === 'paid' ? 'Pagado' : 'Pendiente' }}
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-
-            <!-- Totales destacados -->
-            <section class="mt-6 rounded-xl border border-primary-200 bg-primary-50 p-5">
-              <h3 class="text-xs uppercase tracking-wide font-semibold text-primary-700 mb-3">
-                Resumen del mes
-              </h3>
-              <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                  <p class="text-xs text-[#6b7280]">Total ganado (cobrado)</p>
-                  <p class="text-2xl font-bold text-primary-700 tabular-nums">{{ formatCurrency(paymentsStore.monthSummary.paid) }}</p>
-                </div>
-                <div>
-                  <p class="text-xs text-[#6b7280]">Pendiente de cobro</p>
-                  <p class="text-2xl font-bold text-primary-700 tabular-nums">{{ formatCurrency(paymentsStore.monthSummary.pending) }}</p>
-                </div>
-                <div>
-                  <p class="text-xs text-[#6b7280]">Horas dictadas</p>
-                  <p class="text-2xl font-bold text-primary-700">{{ formatHours(paymentsStore.monthSummary.hours) }} h</p>
-                </div>
-                <div>
-                  <p class="text-xs text-[#6b7280]">Clases dictadas</p>
-                  <p class="text-2xl font-bold text-primary-700">{{ paymentsStore.monthSummary.classes }}</p>
-                </div>
-              </div>
-              <p class="mt-4 pt-3 border-t border-primary-200 text-sm text-primary-800">
-                Total del mes (cobrado + pendiente):
-                <span class="font-bold tabular-nums">{{ formatCurrency(paymentsStore.monthSummary.total) }}</span>
-              </p>
-            </section>
-          </template>
-
-          <footer class="mt-6 pt-4 border-t border-[#e5e7eb] text-xs text-[#9ca3af] text-center">
-            TutorApp — informe generado el {{ formatLongDate() }}
-          </footer>
-        </article>
-      </section>
+      </Card>
     </div>
   </div>
 </template>
