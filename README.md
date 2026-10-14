@@ -51,6 +51,29 @@ npx vite build --mode development
 > Se usa este comando (y no `npm run build`) porque `npm run build` ejecuta `vue-tsc`, que
 > falla con la versión de Node actual del equipo. El resultado queda en `dist/`.
 
+## Pruebas
+
+```bash
+npm test          # corre los tests una vez
+npm run test:watch  # modo interactivo
+```
+
+Son tests automáticos (Vitest + @vue/test-utils) que cubren el pago de las clases
+(la casilla "Abonado" es definitiva y no se puede deshacer), el "Total abonado" de
+cada alumno, el estado "Al día" / "Pendiente de cobro" y el calendario del celular
+(un día por vez). Están en `tests/`.
+
+## Datos de prueba
+
+En **Ajustes → Datos de prueba** hay dos botones:
+
+- **Cargar datos de prueba**: crea 7 alumnos, sus clases (pagadas, pendientes y
+  canceladas) y los pagos de ejemplo para probar el sistema con varios alumnos.
+- **Borrar datos de prueba**: elimina todo lo que haya creado.
+
+Todo lo que se crea lleva el prefijo `[DEMO] ` en el nombre, así se distingue de los
+datos reales y se puede borrar en un solo paso.
+
 ## Publicar
 
 ### Automático (recomendado)

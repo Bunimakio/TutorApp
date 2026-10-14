@@ -5,16 +5,21 @@ import { useSyncStore } from '@/stores/sync';
 import { useUIStore } from '@/stores/ui';
 import { useThemeStore } from '@/stores/theme';
 import { useClassesStore } from '@/stores/classes';
+import { useStudentsStore } from '@/stores/students';
+import { useSubjectsStore } from '@/stores/subjects';
+import { loadDemoData, deleteDemoData } from '@/lib/demo';
 import Button from '@/components/ui/Button.vue';
 import Input from '@/components/ui/Input.vue';
 import Card from '@/components/ui/Card.vue';
-import { User, Mail, Lock, Database, RefreshCw, Wifi, WifiOff, AlertCircle, CheckCircle, LogOut, Moon, Sun, Monitor, Download, Info } from 'lucide-vue-next';
+import { User, Mail, Lock, Database, RefreshCw, Wifi, WifiOff, AlertCircle, CheckCircle, LogOut, Moon, Sun, Monitor, Download, Info, FlaskConical } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
 const syncStore = useSyncStore();
 const uiStore = useUIStore();
 const themeStore = useThemeStore();
 const classesStore = useClassesStore();
+const studentsStore = useStudentsStore();
+const subjectsStore = useSubjectsStore();
 
 const newPassword = ref('');
 const confirmPassword = ref('');
@@ -74,6 +79,44 @@ function handleClearOfflineData(): void {
 function handleExportData(): void {
   // TODO: Exportar datos a JSON
   uiStore.notify('info', 'Función próximamente');
+}
+
+// Datos de prueba (alumnos, clases y pagos de ejemplo)
+const demoLoading = ref(false);
+
+async function refreshAfterDemo(): Promise<void> {
+  await Promise.all([studentsStore.fetchAll(true), subjectsStore.fetchAll(true)]);
+  await classesStore.fetchWeek(classesStore.currentWeek.start, classesStore.currentWeek.end);
+}
+
+async function handleLoadDemo(): Promise<void> {
+  demoLoading.value = true;
+  try {
+    const result = await loadDemoData();
+    await refreshAfterDemo();
+    uiStore.notify('success', `Listo: ${result.students} alumnos y ${result.classes} clases de prueba`);
+  } catch (e: any) {
+    uiStore.notify('error', e?.message ? `No se pudieron crear: ${e.message}` : 'No se pudieron crear los datos de prueba');
+  } finally {
+    demoLoading.value = false;
+  }
+}
+
+async function handleDeleteDemo(): Promise<void> {
+  if (!confirm('¿Borrar todos los datos de prueba ([DEMO])? Se eliminan sus alumnos, clases y asignaturas de ejemplo.')) {
+    return;
+  }
+
+  demoLoading.value = true;
+  try {
+    const result = await deleteDemoData();
+    await refreshAfterDemo();
+    uiStore.notify('success', `Se borraron ${result.students} alumnos de prueba`);
+  } catch (e: any) {
+    uiStore.notify('error', e?.message ? `No se pudieron borrar: ${e.message}` : 'No se pudieron borrar los datos de prueba');
+  } finally {
+    demoLoading.value = false;
+  }
 }
 </script>
 
@@ -204,6 +247,34 @@ function handleExportData(): void {
           </Button>
           <Button variant="ghost" icon="Trash2" @click="handleClearOfflineData" class="gap-1.5 text-red-600 hover:text-red-700">
             Limpiar datos locales
+          </Button>
+        </div>
+      </Card>
+    </section>
+
+    <!-- Datos de prueba -->
+    <section>
+      <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <FlaskConical class="w-5 h-5 text-primary-600" />
+        Datos de prueba
+      </h2>
+
+      <Card class="p-6 space-y-4">
+        <p class="text-sm text-gray-500">
+          Crea alumnos, clases y pagos de ejemplo (todos empiezan con
+          <span class="font-medium text-gray-700">[DEMO]</span>) para probar el
+          calendario y la sección de pagos con varios alumnos a la vez.
+        </p>
+        <p class="text-sm text-gray-500">
+          Incluye un alumno al día, uno con deuda, uno con clases canceladas,
+          uno sin clases, uno con la semana cargada y clases sin precio.
+        </p>
+        <div class="flex flex-wrap gap-2">
+          <Button variant="outline" icon="Plus" :loading="demoLoading" @click="handleLoadDemo" class="gap-1.5">
+            Cargar datos de prueba
+          </Button>
+          <Button variant="ghost" icon="Trash2" :disabled="demoLoading" @click="handleDeleteDemo" class="gap-1.5 text-red-600 border-red-300 hover:bg-red-50">
+            Borrar datos de prueba
           </Button>
         </div>
       </Card>
