@@ -22,6 +22,7 @@ const form = useForm({
   email: '',
   phone: '',
   notes: '',
+  notify_email: true,
 });
 
 const validationRules = {
@@ -61,6 +62,7 @@ watch(() => props.student, (student) => {
       email: student.email || '',
       phone: student.phone || '',
       notes: student.notes || '',
+      notify_email: student.notify_email !== false,
     });
   } else {
     form.reset();
@@ -132,6 +134,20 @@ function handleClose(): void {
           placeholder="Notas adicionales..."
         />
       </div>
+
+      <label
+        class="flex items-start gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
+      >
+        <input
+          type="checkbox"
+          v-model="form.values.notify_email"
+          class="mt-0.5 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+        />
+        <div>
+          <span class="block text-sm font-medium text-gray-900">Recibe correos</span>
+          <span class="block text-xs text-gray-500 mt-0.5">Recordatorios de clase y avisos (se respeta si pidió no recibirlos)</span>
+        </div>
+      </label>
 
       <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
         <Button type="button" variant="ghost" @click="handleClose">Cancelar</Button>

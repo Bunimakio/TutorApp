@@ -92,6 +92,7 @@ const DEMO_STUDENTS: DemoStudent[] = [
     email: 'carla.ruiz@ejemplo.com',
     phone: '602 555 666',
     notes: 'Una clase se canceló por enfermedad.',
+    notify_email: false,
     subject: 2,
     classes: [
       { weekOffset: 0, day: 2, start: '11:00', minutes: 60, status: 'paid' },
@@ -162,6 +163,7 @@ export interface DemoStudentRow {
   email: string | null;
   phone: string | null;
   notes: string;
+  notify_email?: boolean;
 }
 
 export interface DemoClassRow {
@@ -183,6 +185,7 @@ export function buildDemoStudentRows(): DemoStudentRow[] {
     email: s.email,
     phone: s.phone,
     notes: s.notes,
+    notify_email: s.notify_email !== false,
   }));
 }
 

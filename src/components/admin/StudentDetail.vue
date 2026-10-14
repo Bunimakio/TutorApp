@@ -77,6 +77,12 @@ function timeToMinutes(timeStr: string): number {
             <span v-if="props.student.phone" class="flex items-center gap-1">
               <Phone class="w-4 h-4 flex-shrink-0" /> {{ props.student.phone }}
             </span>
+            <span v-if="props.student.notify_email === false" class="flex items-center gap-1 text-yellow-700">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 flex-shrink-0">
+                <path fill-rule="evenodd" d="M5.25 9a6.75 6.75 0 0 1 13.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 0 1-.297 1.206c-1.544.57-3.16.99-4.831 1.243a3.75 3.75 0 1 1-7.48 0 24.585 24.585 0 0 1-4.831-1.244.75.75 0 0 1-.298-1.205A8.217 8.217 0 0 0 5.25 9.75V9Zm4.502 8.9a2.25 2.25 0 1 0 3.496 0 25.057 25.057 0 0 1-3.496 0Z" clip-rule="evenodd" />
+              </svg>
+              No recibe correos
+            </span>
             <span class="flex items-center gap-1">
               <Calendar class="w-4 h-4 flex-shrink-0" />
               Alumno desde {{ formatDate(props.student.created_at) }}

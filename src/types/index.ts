@@ -22,6 +22,7 @@ export interface Student {
   email: string | null;
   phone: string | null;
   notes: string | null;
+  notify_email?: boolean;
   created_at: string;
   updated_at: string;
   // Campos computados (no en BD)
@@ -30,6 +31,7 @@ export interface Student {
   last_class_date?: string | null;
   classes_last_month?: number;
   paid_last_month?: number;
+  _synced?: boolean;
 }
 
 export interface ClassSession {

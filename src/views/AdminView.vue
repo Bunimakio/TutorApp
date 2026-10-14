@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useStudentsStore } from '@/stores/students';
-import { StudentList, StudentDetail, StudentFormModal } from '@/components/admin';
-import { ArrowLeft } from 'lucide-vue-next';
+import { StudentList, StudentDetail, StudentFormModal, MessageModal } from '@/components/admin';
+import { ArrowLeft, Mail } from 'lucide-vue-next';
 
 const studentsStore = useStudentsStore();
 
 const showStudentForm = ref(false);
 const editingStudent = ref<any>(null);
+const showMessages = ref(false);
 
 // En pantallas pequeñas mostramos la lista O el detalle, nunca los dos a la vez.
 const showMobileDetail = ref(false);
@@ -59,9 +60,19 @@ async function handleStudentSubmit(data: any): Promise<void> {
 <template>
   <div class="flex-1 flex flex-col min-h-0 bg-gray-50">
     <!-- Header -->
-    <div class="px-6 py-4 bg-surface border-b border-gray-200">
-      <h1 class="text-2xl font-bold text-gray-900">Alumnos</h1>
-      <p class="text-gray-500 mt-1">Gestiona tus alumnos, sus clases y sus pagos</p>
+    <div class="px-6 py-4 bg-surface border-b border-gray-200 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Alumnos</h1>
+        <p class="text-gray-500 mt-1">Gestiona tus alumnos, sus clases y sus pagos</p>
+      </div>
+      <button
+        type="button"
+        class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg bg-surface hover:bg-gray-50 shadow-sm transition-colors"
+        @click="showMessages = true"
+      >
+        <Mail class="w-4 h-4" />
+        Mensajería
+      </button>
     </div>
 
     <!-- Lista + detalle -->
@@ -110,6 +121,13 @@ async function handleStudentSubmit(data: any): Promise<void> {
       :student="editingStudent"
       @submit="handleStudentSubmit"
       @close="showStudentForm = false; editingStudent = null"
+    />
+
+    <!-- Modal de mensajería -->
+    <MessageModal
+      v-model="showMessages"
+      @close="showMessages = false"
+      @sent="showMessages = false"
     />
   </div>
 </template>

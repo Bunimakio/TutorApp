@@ -42,6 +42,13 @@ export const auth = {
 
   getSession: () => supabase.auth.getSession(),
 
+  // Token de la sesión actual: se manda al servicio de mensajería para
+  // que confirme que el pedido viene de un usuario con sesión iniciada.
+  getAccessToken: async (): Promise<string | null> => {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token ?? null;
+  },
+
   getUser: () => supabase.auth.getUser(),
 
   onAuthStateChange: (callback: (event: string, session: unknown) => void) =>
@@ -148,6 +155,21 @@ export const db = {
         .from('students')
         .delete()
         .eq('id', id),
+  },
+
+  // Messages (logs de envíos de correo)
+  messages: {
+    insert: (row: any) => {
+      const query = supabase.from('messages').insert(row).select();
+      return Array.isArray(row) ? query : query.single();
+    },
+
+    getToday: (startISO: string) =>
+      supabase
+        .from('messages')
+        .select('id')
+        .gte('sent_at', startISO)
+        .order('sent_at', { ascending: false }),
   },
 
   // Classes
