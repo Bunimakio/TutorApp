@@ -108,8 +108,6 @@ function handleGoToToday(): void {
           {{ syncStore.pendingCount }} cambios pendientes
         </span>
       </div>
-
-      <!-- Notificaciones: sin implementar por ahora. -->
     </div>
 
     <!-- Grid del calendario -->

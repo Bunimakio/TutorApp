@@ -5,7 +5,7 @@ import { useUIStore } from '@/stores/ui';
 import { useClassesStore } from '@/stores/classes';
 import { useSyncStore } from '@/stores/sync';
 import { RouterView, RouterLink } from 'vue-router';
-import { LayoutDashboard, Users, BookOpen, Wallet, Settings, LogOut, Menu, X, ChevronDown, Bell, Wifi, WifiOff, AlertCircle, CheckCircle, RefreshCw } from 'lucide-vue-next';
+import { LayoutDashboard, Users, BookOpen, Wallet, Settings, LogOut, Menu, X, ChevronDown, Wifi, WifiOff, AlertCircle, CheckCircle, RefreshCw } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
 const uiStore = useUIStore();
@@ -85,14 +85,6 @@ function handleSignOut(): void {
           <AlertCircle class="w-3.5 h-3.5" />
           {{ syncStore.pendingCount }} pendientes
         </span>
-
-        <!-- Notificaciones -->
-        <button class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 relative" aria-label="Notificaciones">
-          <Bell class="w-5 h-5" />
-          <span v-if="uiStore.notifications.length > 0" class="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-            {{ uiStore.notifications.length > 9 ? '9+' : uiStore.notifications.length }}
-          </span>
-        </button>
 
         <!-- Usuario -->
         <div class="hidden lg:flex items-center gap-3 pl-4 border-l border-gray-200">

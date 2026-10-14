@@ -1,6 +1,5 @@
 import type { Component } from 'vue';
 import {
-  Bell,
   BookOpen,
   Calendar,
   ChevronDown,
@@ -31,7 +30,6 @@ import {
  * componente de lucide y no dibuja nada (deja solo el hueco del layout).
  */
 const iconRegistry: Record<string, Component> = {
-  Bell,
   BookOpen,
   Calendar,
   ChevronDown,
