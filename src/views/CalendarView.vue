@@ -5,7 +5,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useSyncStore } from '@/stores/sync';
 import { useUIStore } from '@/stores/ui';
 import { CalendarGrid, WeekNavigator, ClassFormModal } from '@/components/calendar';
-import { AlertCircle, WifiOff, Wifi, RefreshCw, Bell } from 'lucide-vue-next';
+import { AlertCircle, WifiOff, Wifi, RefreshCw } from 'lucide-vue-next';
 
 const classesStore = useClassesStore();
 const authStore = useAuthStore();
@@ -109,13 +109,7 @@ function handleGoToToday(): void {
         </span>
       </div>
 
-      <Button
-        variant="ghost"
-        size="sm"
-        icon="Bell"
-        @click="$emit('notify', { type: 'info', message: 'Notificaciones próximamente' })"
-        aria-label="Notificaciones"
-      />
+      <!-- Notificaciones: sin implementar por ahora. -->
     </div>
 
     <!-- Grid del calendario -->
