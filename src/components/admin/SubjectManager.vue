@@ -87,12 +87,12 @@ function formatCurrency(amount: number): string {
 <template>
   <div class="space-y-6">
     <!-- Header -->
-    <div class="flex items-center justify-between">
-      <div>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="min-w-0">
         <h2 class="text-2xl font-bold text-gray-900">Asignaturas y Precios</h2>
         <p class="text-gray-500 mt-1">Gestiona las asignaturas y su precio por hora</p>
       </div>
-      <Button variant="primary" icon="Plus" @click="openCreate" class="gap-1.5">
+      <Button variant="primary" icon="Plus" @click="openCreate" class="gap-1.5 shrink-0">
         Nueva asignatura
       </Button>
     </div>
@@ -102,34 +102,34 @@ function formatCurrency(amount: number): string {
       <Card
         v-for="subject in subjectsStore.sortedSubjects"
         :key="subject.id"
-        class="p-4 flex flex-col"
+        class="p-4 flex flex-col min-w-0 overflow-hidden"
         :style="{ borderLeft: `4px solid ${subject.color}` }"
       >
-        <div class="flex items-start justify-between mb-3">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white" :style="{ backgroundColor: subject.color }">
+        <div class="flex items-start justify-between gap-3 mb-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white shrink-0" :style="{ backgroundColor: subject.color }">
               <BookOpen class="w-5 h-5" />
             </div>
-            <div>
-              <h3 class="font-semibold text-gray-900">{{ subject.name }}</h3>
-              <p class="text-sm text-gray-500">ID: {{ subject.id.slice(0, 8) }}...</p>
+            <div class="min-w-0">
+              <h3 class="font-semibold text-gray-900 break-words">{{ subject.name }}</h3>
+              <p class="text-sm text-gray-500 truncate">ID: {{ subject.id.slice(0, 8) }}...</p>
             </div>
           </div>
-          <Badge :variant="subject.price === 0 ? 'warning' : 'success'" size="sm" :dot="true">
+          <Badge class="shrink-0 whitespace-nowrap" :variant="subject.price === 0 ? 'warning' : 'success'" size="sm" :dot="true">
             <DollarSign class="w-3 h-3" />
             {{ subject.price === 0 ? 'Sin precio' : formatCurrency(subject.price) + '/h' }}
           </Badge>
         </div>
 
-        <div class="flex-1 flex items-end justify-between pt-4 border-t border-gray-100">
-          <div class="flex items-center gap-2 text-sm text-gray-500">
-            <span class="flex items-center gap-1">
-              <Palette class="w-3.5 h-3.5" />
-              <span class="font-mono">{{ subject.color }}</span>
+        <div class="flex-1 flex flex-wrap items-end justify-between gap-2 pt-4 border-t border-gray-100 min-w-0">
+          <div class="flex items-center gap-2 text-sm text-gray-500 min-w-0">
+            <span class="flex items-center gap-1 min-w-0">
+              <Palette class="w-3.5 h-3.5 shrink-0" />
+              <span class="font-mono truncate">{{ subject.color }}</span>
             </span>
-            <div class="w-6 h-6 rounded border" :style="{ backgroundColor: subject.color }" />
+            <div class="w-6 h-6 rounded border shrink-0" :style="{ backgroundColor: subject.color }" />
           </div>
-          <div class="flex items-center gap-1">
+          <div class="flex items-center gap-1 shrink-0">
             <Button variant="ghost" size="sm" icon="Edit" @click="openEdit(subject)" class="p-1.5" aria-label="Editar" />
             <Button variant="ghost" size="sm" icon="Trash2" @click="handleDelete(subject)" class="p-1.5 text-red-600 hover:text-red-700" aria-label="Eliminar" />
           </div>
