@@ -51,6 +51,21 @@ npx vite build --mode development
 > Se usa este comando (y no `npm run build`) porque `npm run build` ejecuta `vue-tsc`, que
 > falla con la versión de Node actual del equipo. El resultado queda en `dist/`.
 
+## Pagos
+
+La sección **Pagos** (en el menú, entre Asignaturas y Configuración) tiene dos partes:
+
+- **Últimos pagos**: las 10 clases más recientes (pagadas y pendientes; las canceladas
+  no se muestran) con fecha y hora, alumno, asignatura, monto y condición. Se pueden
+  filtrar por alumno, asignatura o fecha.
+- **Informe del mes**: un resumen imprimible con encabezado (nombre de la app, usuario,
+  fecha y período), todas las clases del mes ordenadas por fecha y un cuadro destacado
+  con el total ganado, lo pendiente de cobro, las horas y la cantidad de clases.
+
+El botón **Imprimir / Guardar PDF** abre el diálogo del navegador: la hoja del informe es
+lo único que se imprime (el resto de la app queda oculto), así que se puede elegir
+"Guardar como PDF". El mes del informe se puede cambiar con el selector.
+
 ## Pruebas
 
 ```bash
@@ -60,8 +75,9 @@ npm run test:watch  # modo interactivo
 
 Son tests automáticos (Vitest + @vue/test-utils) que cubren el pago de las clases
 (la casilla "Abonado" es definitiva y no se puede deshacer), el "Total abonado" de
-cada alumno, el estado "Al día" / "Pendiente de cobro" y el calendario del celular
-(un día por vez). Están en `tests/`.
+cada alumno, el estado "Al día" / "Pendiente de cobro", la sección de Pagos (últimos
+10 pagos, filtros, informe del mes y el cálculo del último día del mes, incluido febrero
+en año bisiesto) y el calendario del celular (un día por vez). Están en `tests/`.
 
 ## Datos de prueba
 
@@ -100,7 +116,7 @@ Doble clic en `publicar.cmd`: compila y sube con `wrangler` desde la PC.
 ```
 src/
   components/   componentes de UI y del calendario
-  views/        pantallas (calendario, alumnos, ajustes, admin, login)
+  views/        pantallas (calendario, alumnos, asignaturas, pagos, ajustes, login)
   stores/       estado con Pinia (clases, alumnos, materias, tema, auth)
   lib/          cliente de Supabase, iconos, IndexedDB
 public/         archivos estáticos (iconos, manifest, _redirects)

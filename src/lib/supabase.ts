@@ -199,6 +199,44 @@ export const db = {
         .order('start_time', { ascending: false })
         .limit(limit),
 
+    // Últimos pagos: clases recientes con alumno y asignatura. No incluye las
+    // canceladas (rechazadas). Los filtros se aplican en la consulta para que
+    // sigan devolviendo las últimas 10 coincidencias.
+    getRecent: (options: { limit?: number; studentId?: string; subjectId?: string; date?: string } = {}) => {
+      let query = supabase
+        .from('classes')
+        .select(`
+          *,
+          student:students(*),
+          subject:subjects(*)
+        `)
+        .neq('status', 'cancelled');
+
+      if (options.studentId) query = query.eq('student_id', options.studentId);
+      if (options.subjectId) query = query.eq('subject_id', options.subjectId);
+      if (options.date) query = query.eq('date', options.date);
+
+      return query
+        .order('date', { ascending: false })
+        .order('start_time', { ascending: false })
+        .limit(options.limit ?? 10);
+    },
+
+    // Clases de un mes (informe de pagos), ordenadas por fecha y hora.
+    getByMonth: (start: string, end: string) =>
+      supabase
+        .from('classes')
+        .select(`
+          *,
+          student:students(*),
+          subject:subjects(*)
+        `)
+        .neq('status', 'cancelled')
+        .gte('date', start)
+        .lte('date', end)
+        .order('date')
+        .order('start_time'),
+
     // Todas las clases pagadas de un alumno (para el total abonado histórico).
     getPaidByStudent: (studentId: string) =>
       supabase

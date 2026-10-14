@@ -276,3 +276,53 @@
     @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-primary-700;
   }
 }
+
+/*
+ * Impresión de la sección Pagos:
+ * cuando existe la hoja del informe (.print-report) se imprime SOLO esa hoja
+ * y se oculta el resto de la app. En el resto de las páginas se imprime normal.
+ */
+@media print {
+  body:has(.print-report) {
+    background: #fff !important;
+  }
+
+  body:has(.print-report) * {
+    visibility: hidden !important;
+  }
+
+  .print-report,
+  .print-report * {
+    visibility: visible !important;
+  }
+
+  .print-report {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    /* Conserva el color de los totales destacados en el PDF. */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  /* Evita que una fila o el resumen queden cortados entre dos páginas. */
+  .print-report tr,
+  .print-report section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  @page {
+    margin: 12mm;
+  }
+}

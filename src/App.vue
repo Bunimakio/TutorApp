@@ -5,7 +5,7 @@ import { useUIStore } from '@/stores/ui';
 import { useClassesStore } from '@/stores/classes';
 import { useSyncStore } from '@/stores/sync';
 import { RouterView, RouterLink } from 'vue-router';
-import { LayoutDashboard, Users, BookOpen, Settings, LogOut, Menu, X, ChevronDown, Bell, Wifi, WifiOff, AlertCircle, CheckCircle, RefreshCw } from 'lucide-vue-next';
+import { LayoutDashboard, Users, BookOpen, Wallet, Settings, LogOut, Menu, X, ChevronDown, Bell, Wifi, WifiOff, AlertCircle, CheckCircle, RefreshCw } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
 const uiStore = useUIStore();
@@ -54,6 +54,7 @@ function handleSignOut(): void {
             { path: '/', icon: LayoutDashboard, label: 'Calendario' },
             { path: '/admin', icon: Users, label: 'Alumnos' },
             { path: '/subjects', icon: BookOpen, label: 'Asignaturas' },
+            { path: '/payments', icon: Wallet, label: 'Pagos' },
             { path: '/settings', icon: Settings, label: 'Configuración' }
           ]"
           :key="route.path"
