@@ -180,14 +180,15 @@ describe('editar clase', () => {
     expect(payload).not.toHaveProperty('student_email');
   });
 
-  it('no baja a pendiente una clase ya pagada si no se marca la casilla', async () => {
+  it('no deja modificar una clase ya abonada (ni el alumno ni los demás datos)', async () => {
     const store = useClassesStore();
     store.classes = [makeClass({ status: 'paid' })];
 
-    await store.update('c-1', formData({ paid: false }));
+    const result = await store.update('c-1', formData({ student_name: 'Otro Alumno', paid: false }));
 
-    const payload = vi.mocked(db.classes.update).mock.calls[0][1] as any;
-    expect(payload).not.toHaveProperty('status');
+    expect(result).toBeNull();
+    expect(db.classes.update).not.toHaveBeenCalled();
+    expect(store.error).toBe('Una clase abonada no se puede modificar');
   });
 
   it('deja las clases canceladas como canceladas', async () => {
@@ -211,7 +212,7 @@ describe('editar clase', () => {
 
   it('no refresca estadísticas si el pago no cambió', async () => {
     const store = useClassesStore();
-    store.classes = [makeClass({ status: 'paid' })];
+    store.classes = [makeClass({ status: 'cancelled' })];
 
     await store.update('c-1', formData({ paid: false }));
 

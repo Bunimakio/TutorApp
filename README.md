@@ -51,6 +51,17 @@ npx vite build --mode development
 > Se usa este comando (y no `npm run build`) porque `npm run build` ejecuta `vue-tsc`, que
 > falla con la versión de Node actual del equipo. El resultado queda en `dist/`.
 
+## Pago de las clases
+
+El pago se confirma con la casilla **"Abonado (pago confirmado)"** del formulario de la
+clase. Es definitivo y no se puede deshacer.
+
+Una clase abonada ya se dictó, así que queda **solo para ver**: al abrirla no se puede
+cambiar el alumno ni ningún otro dato (asignatura, día, horario, fecha, notas). Mientras
+se confirma el pago en una clase pendiente, los campos también se bloquean para que el
+alumno no cambie junto con el pago. El mismo control existe en el store de clases, por si
+llega un cambio desde otro lado.
+
 ## Pagos
 
 La sección **Pagos** (en el menú, entre Asignaturas y Configuración) tiene dos partes:
@@ -72,7 +83,8 @@ npm run test:watch  # modo interactivo
 ```
 
 Son tests automáticos (Vitest + @vue/test-utils) que cubren el pago de las clases
-(la casilla "Abonado" es definitiva y no se puede deshacer), el "Total abonado" de
+(la casilla "Abonado" es definitiva y no se puede deshacer, y una clase abonada queda
+solo para ver), el "Total abonado" de
 cada alumno, el estado "Al día" / "Pendiente de cobro", la sección de Pagos (últimos
 10 pagos, filtros, informe del mes y el cálculo del último día del mes, incluido febrero
 en año bisiesto) y el calendario del celular (un día por vez). Están en `tests/`.

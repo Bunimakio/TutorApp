@@ -143,3 +143,51 @@ describe('casilla de pago del modal de clase', () => {
     expect(wrapper.text()).toContain('cancelada');
   });
 });
+
+describe('una clase abonada es solo para ver', () => {
+  const studentInput = (wrapper: any) => wrapper.find('input[placeholder^="Buscar"]');
+
+  it('bloquea el alumno, los demás campos y no deja guardar', async () => {
+    const wrapper = await openModal(makeClass({ status: 'paid' }));
+
+    const student = studentInput(wrapper);
+    expect(student.attributes('disabled')).toBeDefined();
+    expect((student.element as HTMLInputElement).value).toBe('Ana Gómez');
+    expect(wrapper.find('input[type="email"]').attributes('disabled')).toBeDefined();
+    expect(wrapper.find('textarea').attributes('disabled')).toBeDefined();
+    expect(wrapper.findAll('select').every(sel => sel.attributes('disabled') !== undefined)).toBe(true);
+
+    expect(wrapper.text()).toContain('no se puede modificar nada');
+    expect(wrapper.find('button[type="submit"]').exists()).toBe(false);
+  });
+
+  it('no deja cambiar el alumno al mismo tiempo que se confirma el pago', async () => {
+    const wrapper = await openModal(makeClass());
+    const checkbox = wrapper.find('input[type="checkbox"]');
+
+    // Todavía pendiente: se puede cambiar el alumno.
+    await studentInput(wrapper).setValue('Otro Alumno');
+    expect((studentInput(wrapper).element as HTMLInputElement).value).toBe('Otro Alumno');
+
+    // Al marcar "Abonado" los campos se bloquean y vuelven a los datos originales.
+    await checkbox.setValue(true);
+
+    expect((studentInput(wrapper).element as HTMLInputElement).value).toBe('Ana Gómez');
+    expect(studentInput(wrapper).attributes('disabled')).toBeDefined();
+    expect(wrapper.find('select').attributes('disabled')).toBeDefined();
+    expect(wrapper.text()).toContain('no se puede cambiar el alumno');
+    // Se puede confirmar el pago (el botón sigue disponible).
+    expect(wrapper.find('button[type="submit"]').text()).toContain('Confirmar pago');
+  });
+
+  it('desmarcar antes de guardar vuelve a habilitar el formulario', async () => {
+    const wrapper = await openModal(makeClass());
+    const checkbox = wrapper.find('input[type="checkbox"]');
+
+    await checkbox.setValue(true);
+    expect(studentInput(wrapper).attributes('disabled')).toBeDefined();
+
+    await checkbox.setValue(false);
+    expect(studentInput(wrapper).attributes('disabled')).toBeUndefined();
+  });
+});

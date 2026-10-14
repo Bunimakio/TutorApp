@@ -324,6 +324,14 @@ export const useClassesStore = defineStore('classes', () => {
       return null;
     }
 
+    // Una clase abonada ya se dictó: queda como está, no se puede modificar nada
+    // (ni el alumno ni el resto de los datos).
+    if (existingClass.status === 'paid') {
+      error.value = 'Una clase abonada no se puede modificar';
+      loading.value = false;
+      return null;
+    }
+
     // Payload solo con columnas reales de la tabla `classes`. El formulario trae
     // campos extra (student_name, student_email, duration_minutes) que la API
     // rechaza; acá la duración se convierte en end_time.

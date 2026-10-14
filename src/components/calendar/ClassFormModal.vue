@@ -10,7 +10,7 @@ import Modal from '@/components/ui/Modal.vue';
 import Input from '@/components/ui/Input.vue';
 import Select from '@/components/ui/Select.vue';
 import Button from '@/components/ui/Button.vue';
-import { User, Mail, Calendar, Clock, BookOpen, UserPlus, CheckCircle } from 'lucide-vue-next';
+import { User, Mail, Calendar, Clock, BookOpen, UserPlus, CheckCircle, Lock } from 'lucide-vue-next';
 
 const props = defineProps<{
   modelValue: boolean;
@@ -80,10 +80,15 @@ const subjectOptions = computed(() =>
 const isPaid = computed(() => form.values.paid === true);
 // Si la clase ya está pagada, el pago queda bloqueado (no se puede deshacer).
 // Si está cancelada, tampoco se puede confirmar el pago.
-const paymentLocked = computed(() => props.mode === 'edit' && props.initialData?.status === 'paid');
 const paymentDisabled = computed(() =>
   props.mode === 'edit' && (props.initialData?.status === 'paid' || props.initialData?.status === 'cancelled')
 );
+
+// Una clase abonada ya se dictó: es historia y se muestra solo para ver.
+const viewOnly = computed(() => props.mode === 'edit' && props.initialData?.status === 'paid');
+// Mientras se confirma el pago (clase pendiente con la casilla marcada) los campos se
+// bloquean, así no se puede cambiar el alumno ni ningún otro dato junto con el pago.
+const fieldsLocked = computed(() => viewOnly.value || (props.mode === 'edit' && isPaid.value));
 
 // El día de la semana y la fecha van siempre juntos: al elegir un día se calcula
 // su fecha dentro de la semana que se está viendo, y al editar la fecha se
@@ -134,6 +139,14 @@ watch(() => props.modelValue, async (open) => {
   }
 });
 
+// Al marcar "Abonado" en una clase pendiente la clase queda bloqueada: se vuelve a
+// los datos originales para que el alumno (ni nada más) cambie junto con el pago.
+watch(isPaid, (paid) => {
+  if (!paid || props.mode !== 'edit' || !props.initialData) return;
+  populateForm(true);
+  showStudentSearch.value = false;
+});
+
 // Si el usuario cambia el nombre a mano, dejamos de considerar al alumno seleccionado.
 watch(() => form.values.student_name, (val) => {
   if (selectedStudent.value && val !== selectedStudent.value.full_name) {
@@ -175,7 +188,7 @@ function resetForm(): void {
   showStudentSearch.value = false;
 }
 
-function populateForm(): void {
+function populateForm(keepPayment = false): void {
   if (props.mode === 'edit' && props.initialData) {
     const c = props.initialData;
     const duration = timeToMinutes(c.end_time) - timeToMinutes(c.start_time);
@@ -189,7 +202,7 @@ function populateForm(): void {
       duration_minutes: duration as 30 | 60 | 90 | 120,
       date: c.date,
       notes: c.notes || '',
-      paid: c.status === 'paid',
+      paid: keepPayment ? true : c.status === 'paid',
     });
 
     selectedStudent.value = c.student ? {
@@ -242,6 +255,9 @@ function clearSelectedStudent(): void {
 }
 
 async function handleSubmit(): Promise<void> {
+  // Una clase abonada se muestra solo para ver: no hay nada que guardar.
+  if (viewOnly.value) return;
+
   const valid = await form.handleSubmit(
     async (values) => {
       // Validar conflictos
@@ -281,12 +297,28 @@ function handleClose(): void {
 <template>
   <Modal
     :modelValue="props.modelValue"
-    :title="props.mode === 'create' ? 'Nueva Clase' : 'Editar Clase'"
+    :title="props.mode === 'create' ? 'Nueva Clase' : viewOnly ? 'Clase abonada' : 'Editar Clase'"
     :size="'lg'"
     @close="handleClose"
     @update:modelValue="handleClose"
   >
     <form @submit.prevent="handleSubmit" class="space-y-4">
+      <!-- Avisos de bloqueo -->
+      <div
+        v-if="viewOnly"
+        class="flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800"
+      >
+        <CheckCircle class="w-5 h-5 flex-shrink-0 mt-0.5 text-green-600" />
+        <p>Esta clase ya está abonada y se dictó: no se puede modificar nada.</p>
+      </div>
+      <div
+        v-else-if="fieldsLocked"
+        class="flex items-start gap-3 rounded-lg border border-primary-200 bg-primary-50 p-3 text-sm text-primary-800"
+      >
+        <Lock class="w-5 h-5 flex-shrink-0 mt-0.5 text-primary-600" />
+        <p>Al confirmar el pago la clase queda bloqueada: no se puede cambiar el alumno ni los demás datos.</p>
+      </div>
+
       <!-- Alumno -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -296,6 +328,7 @@ function handleClose(): void {
           <Input
             v-model="form.values.student_name"
             :error="form.getError('student_name')"
+            :disabled="fieldsLocked"
             placeholder="Buscar o escribir nombre del alumno..."
             @focus="showStudentSearch = true"
             @keydown.esc="showStudentSearch = false"
@@ -304,7 +337,7 @@ function handleClose(): void {
           <!-- Resultados de búsqueda -->
           <Transition name="fade">
             <div
-              v-if="showStudentSearch"
+              v-if="showStudentSearch && !fieldsLocked"
               class="absolute z-20 left-0 right-0 mt-1 bg-surface border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto"
             >
               <!-- Agregar nuevo alumno (siempre primero) -->
@@ -351,12 +384,12 @@ function handleClose(): void {
               <p v-if="selectedStudent.email" class="text-sm text-green-600">{{ selectedStudent.email }}</p>
             </div>
           </div>
-          <button type="button" @click="clearSelectedStudent" class="text-green-600 hover:text-green-800 text-sm">Cambiar</button>
+          <button v-if="!fieldsLocked" type="button" @click="clearSelectedStudent" class="text-green-600 hover:text-green-800 text-sm">Cambiar</button>
         </div>
 
         <!-- Aviso de alumno nuevo (cuando se escribe un nombre sin seleccionar) -->
         <p
-          v-else-if="form.values.student_name && !showStudentSearch"
+          v-else-if="form.values.student_name && !showStudentSearch && !fieldsLocked"
           class="mt-2 text-sm text-gray-500"
         >
           Se creará un alumno nuevo con ese nombre.
@@ -368,6 +401,7 @@ function handleClose(): void {
         ref="emailInputRef"
         v-model="form.values.student_email"
         :error="form.getError('student_email')"
+        :disabled="fieldsLocked"
         label="Email del alumno"
         placeholder="email@ejemplo.com"
         icon="Mail"
@@ -379,6 +413,7 @@ function handleClose(): void {
         v-model="form.values.subject_id"
         :options="subjectOptions"
         :error="form.getError('subject_id')"
+        :disabled="fieldsLocked"
         label="Asignatura"
         placeholder="Seleccionar asignatura"
         icon="BookOpen"
@@ -391,6 +426,7 @@ function handleClose(): void {
           v-model="selectedDay"
           :options="dayOptions"
           :error="form.getError('day_of_week')"
+          :disabled="fieldsLocked"
           label="Día de la semana"
           icon="Calendar"
         />
@@ -401,6 +437,7 @@ function handleClose(): void {
             <Input
               v-model="form.values.start_time"
               :error="form.getError('start_time')"
+              :disabled="fieldsLocked"
               type="time"
               icon="Clock"
               class="pr-10"
@@ -415,6 +452,7 @@ function handleClose(): void {
           v-model="form.values.duration_minutes"
           :options="durationOptions"
           :error="form.getError('duration_minutes')"
+          :disabled="fieldsLocked"
           label="Duración"
           icon="Clock"
         />
@@ -422,6 +460,7 @@ function handleClose(): void {
         <Input
           v-model="form.values.date"
           :error="form.getError('date')"
+          :disabled="fieldsLocked"
           type="date"
           label="Fecha de la clase"
           icon="Calendar"
@@ -446,7 +485,7 @@ function handleClose(): void {
               Abonado (pago confirmado)
             </span>
             <span class="block text-xs text-gray-500 mt-0.5">
-              <template v-if="paymentLocked">
+              <template v-if="viewOnly">
                 El pago de esta clase ya está confirmado y no se puede deshacer.
               </template>
               <template v-else-if="paymentDisabled">
@@ -466,21 +505,25 @@ function handleClose(): void {
         <textarea
           v-model="form.values.notes"
           rows="3"
-          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900 placeholder-gray-400 resize-none"
+          :disabled="fieldsLocked"
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900 placeholder-gray-400 resize-none disabled:bg-gray-50 disabled:cursor-not-allowed"
           placeholder="Notas adicionales sobre la clase..."
         />
       </div>
 
       <!-- Botones -->
       <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
-        <Button type="button" variant="ghost" @click="handleClose">Cancelar</Button>
-        <Button
-          type="submit"
-          :loading="form.submitting"
-          :disabled="!form.isValid"
-        >
-          {{ props.mode === 'create' ? 'Crear clase' : 'Guardar cambios' }}
-        </Button>
+        <Button v-if="viewOnly" type="button" @click="handleClose">Cerrar</Button>
+        <template v-else>
+          <Button type="button" variant="ghost" @click="handleClose">Cancelar</Button>
+          <Button
+            type="submit"
+            :loading="form.submitting"
+            :disabled="!form.isValid"
+          >
+            {{ props.mode === 'create' ? 'Crear clase' : isPaid ? 'Confirmar pago' : 'Guardar cambios' }}
+          </Button>
+        </template>
       </div>
     </form>
   </Modal>
