@@ -57,10 +57,16 @@ El pago se confirma con la casilla **"Abonado (pago confirmado)"** del formulari
 clase. Es definitivo y no se puede deshacer.
 
 Una clase abonada ya se dictó, así que queda **solo para ver**: al abrirla no se puede
-cambiar el alumno ni ningún otro dato (asignatura, día, horario, fecha, notas). Mientras
-se confirma el pago en una clase pendiente, los campos también se bloquean para que el
-alumno no cambie junto con el pago. El mismo control existe en el store de clases, por si
-llega un cambio desde otro lado.
+cambiar el alumno ni ningún otro dato (asignatura, día, horario, fecha, notas). El mismo
+control existe en el store de clases, por si llega un cambio desde otro lado. Mientras se
+confirma el pago (clase pendiente con la casilla marcada) los campos se bloquean para que
+el alumno no cambie en la misma acción.
+
+Una clase **pendiente** sí se puede editar, incluido el alumno (por ejemplo para corregir
+un alumno mal cargado): el cambio se guarda. Una clase pendiente puede estar todavía en el
+futuro (el alumno no está obligado a pagar antes) o ya dictada y sin cobrar. Confirmar el
+pago y cancelar una clase que no se dictó los decide siempre el usuario a mano: la app no
+lo hace sola.
 
 ## Pagos
 

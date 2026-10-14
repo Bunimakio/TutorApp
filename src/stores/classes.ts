@@ -6,7 +6,7 @@ import { offlineClasses } from '@/lib/indexeddb';
 import { syncService } from '@/lib/sync';
 import { useSubjectsStore } from './subjects';
 import { useStudentsStore } from './students';
-import type { ClassSession, ClassFormData, CalendarCell, WeekRange, DayOfWeek } from '@/types';
+import type { ClassSession, ClassFormData, CalendarCell, WeekRange, DayOfWeek, Student } from '@/types';
 import { toPlain } from '@/lib/plain';
 import { format, addDays, startOfWeek, endOfWeek, parseISO, isSameDay, isBefore, isAfter, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -211,6 +211,40 @@ export const useClassesStore = defineStore('classes', () => {
     }
   }
 
+  // Busca el alumno por id (si se eligió en el buscador), por nombre o por email.
+  // Si no existe, lo crea. Se usa al guardar una clase.
+  async function resolveStudent(data: {
+    student_id?: string;
+    student_name: string;
+    student_email?: string;
+  }): Promise<Student | null> {
+    if (data.student_id) {
+      const byId = studentsStore.students.find(s => s.id === data.student_id);
+      if (byId) return byId;
+    }
+
+    let student = studentsStore.students.find(
+      s => s.full_name.toLowerCase() === data.student_name.toLowerCase()
+    );
+
+    if (!student && data.student_email) {
+      student = studentsStore.students.find(
+        s => s.email?.toLowerCase() === data.student_email!.toLowerCase()
+      );
+    }
+
+    if (!student) {
+      student = await studentsStore.create({
+        full_name: data.student_name,
+        email: data.student_email || null,
+        phone: null,
+        notes: null,
+      });
+    }
+
+    return student ?? null;
+  }
+
   async function create(formData: ClassFormData): Promise<ClassSession | null> {
     loading.value = true;
     error.value = null;
@@ -232,28 +266,11 @@ export const useClassesStore = defineStore('classes', () => {
     }
 
     // Buscar o crear alumno
-    let student = studentsStore.students.find(
-      s => s.full_name.toLowerCase() === formData.student_name.toLowerCase()
-    );
-
-    if (!student && formData.student_email) {
-      student = studentsStore.students.find(
-        s => s.email?.toLowerCase() === formData.student_email.toLowerCase()
-      );
-    }
-
+    const student = await resolveStudent(formData);
     if (!student) {
-      student = await studentsStore.create({
-        full_name: formData.student_name,
-        email: formData.student_email || null,
-        phone: null,
-        notes: null,
-      });
-      if (!student) {
-        error.value = 'Error al crear alumno';
-        loading.value = false;
-        return null;
-      }
+      error.value = 'Error al crear alumno';
+      loading.value = false;
+      return null;
     }
 
     const classData = {
@@ -347,6 +364,31 @@ export const useClassesStore = defineStore('classes', () => {
       payload.end_time = addMinutes(updates.start_time, updates.duration_minutes);
     }
 
+    // El alumno también se puede corregir (por ejemplo si se cargó el equivocado),
+    // siempre que la clase no esté abonada. Solo se toca si realmente cambió.
+    const currentStudentName = existingClass.student?.full_name;
+    const studentChanged =
+      (updates.student_id !== undefined && updates.student_id !== existingClass.student_id) ||
+      (Boolean(currentStudentName) &&
+        updates.student_name !== undefined &&
+        updates.student_name.trim().toLowerCase() !== currentStudentName!.trim().toLowerCase());
+
+    let nextStudent: Student | undefined;
+    if (studentChanged) {
+      const student = await resolveStudent({
+        student_id: updates.student_id,
+        student_name: updates.student_name || '',
+        student_email: updates.student_email || '',
+      });
+      if (!student) {
+        error.value = 'Error al guardar el alumno';
+        loading.value = false;
+        return null;
+      }
+      payload.student_id = student.id;
+      nextStudent = student;
+    }
+
     // Estado del pago: confirmarlo es definitivo, después no se puede deshacer.
     // Si la clase ya estaba pagada o cancelada, no la "bajamos" a pendiente.
     if (updates.paid === true) {
@@ -378,6 +420,7 @@ export const useClassesStore = defineStore('classes', () => {
       const updated = normalizeClass({ ...data, _synced: true } as ClassSession);
       const idx = classes.value.findIndex(c => c.id === id);
       if (idx !== -1) {
+        // Si cambió el alumno, la fila que devuelve la API ya trae la relación nueva.
         classes.value[idx] = { ...classes.value[idx], ...updated };
       }
       if (selectedClass.value?.id === id) {
@@ -385,8 +428,16 @@ export const useClassesStore = defineStore('classes', () => {
       }
       await offlineClasses.put(updated);
 
+      // Al mover la clase a otro alumno hay que refrescar las estadísticas de los dos.
+      const movedToAnotherStudent =
+        payload.student_id !== undefined && payload.student_id !== existingClass.student_id;
+
       // Actualizar stats del alumno si cambió el estado del pago
       if (payload.status && payload.status !== existingClass.status) {
+        await studentsStore.fetchWithStats(updated.student_id);
+      }
+      if (movedToAnotherStudent) {
+        await studentsStore.fetchWithStats(existingClass.student_id);
         await studentsStore.fetchWithStats(updated.student_id);
       }
 
@@ -395,7 +446,13 @@ export const useClassesStore = defineStore('classes', () => {
       // Offline
       const idx = classes.value.findIndex(c => c.id === id);
       if (idx !== -1) {
-        const updated = { ...classes.value[idx], ...payload, updated_at: new Date().toISOString(), _synced: false };
+        const updated = {
+          ...classes.value[idx],
+          ...payload,
+          ...(nextStudent ? { student: nextStudent } : {}),
+          updated_at: new Date().toISOString(),
+          _synced: false,
+        };
         classes.value[idx] = updated;
         if (selectedClass.value?.id === id) {
           selectedClass.value = updated;

@@ -275,7 +275,9 @@ async function handleSubmit(): Promise<void> {
         return;
       }
 
-      emit('submit', values);
+      // Se agrega el alumno elegido en el buscador (si hay) para poder corregirlo
+      // al editar una clase.
+      emit('submit', { ...values, student_id: selectedStudent.value?.id });
     },
     (values) => validateForm(values, validationRules)
   );

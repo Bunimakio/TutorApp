@@ -52,6 +52,8 @@ export interface ClassSession {
 export interface ClassFormData {
   student_name: string;
   student_email: string;
+  /** Alumno elegido en el buscador (lo usa el formulario al editar una clase). */
+  student_id?: string;
   subject_id: string;
   day_of_week: DayOfWeek;
   start_time: string; // HH:MM

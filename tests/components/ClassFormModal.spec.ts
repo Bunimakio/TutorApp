@@ -125,6 +125,38 @@ describe('casilla de pago del modal de clase', () => {
     expect((submitEvents![0][0] as any).paid).toBe(true);
   });
 
+  it('manda el id del alumno de la clase', async () => {
+    const wrapper = await openModal(makeClass());
+
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+
+    expect((wrapper.emitted('submit')![0][0] as any).student_id).toBe('st-1');
+  });
+
+  it('al elegir otro alumno en el buscador, manda el id del nuevo', async () => {
+    vi.mocked(db.students.getAll).mockResolvedValue({
+      data: [{ ...makeClass().student, id: 'st-2', full_name: 'Bruno Díaz', email: 'bruno@ejemplo.com' }],
+      error: null,
+    } as any);
+
+    const wrapper = await openModal(makeClass());
+    const search = wrapper.find('input[placeholder^="Buscar"]');
+
+    await search.setValue('Bruno');
+    await search.trigger('focus');
+    await flushPromises();
+
+    const option = wrapper.findAll('button').find(b => b.text().includes('Bruno Díaz'));
+    expect(option).toBeTruthy();
+    await option!.trigger('click');
+
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+
+    expect((wrapper.emitted('submit')![0][0] as any).student_id).toBe('st-2');
+  });
+
   it('una clase ya pagada queda marcada, bloqueada y avisada', async () => {
     const wrapper = await openModal(makeClass({ status: 'paid' }));
     const checkbox = wrapper.find('input[type="checkbox"]');

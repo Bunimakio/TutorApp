@@ -220,6 +220,84 @@ describe('editar clase', () => {
   });
 });
 
+describe('corregir el alumno de una clase pendiente', () => {
+  const bruno = {
+    id: 'st-2',
+    full_name: 'Bruno Díaz',
+    email: 'bruno@ejemplo.com',
+    phone: null,
+    notes: null,
+    created_at: '',
+    updated_at: '',
+  } as any;
+
+  /** Clase con la relación del alumno cargada (como la devuelve la API). */
+  const classWithStudent = (overrides: Record<string, any> = {}) =>
+    makeClass({ student, ...overrides });
+
+  it('guarda el alumno nuevo y refresca las estadísticas de los dos', async () => {
+    const store = useClassesStore();
+    store.classes = [classWithStudent()];
+    useStudentsStore().students = [student, bruno];
+    vi.mocked(db.classes.update).mockResolvedValue({
+      data: makeClass({ student_id: 'st-2', student: bruno }),
+      error: null,
+    } as any);
+
+    const result = await store.update(
+      'c-1',
+      formData({ student_id: 'st-2', student_name: 'Bruno Díaz', student_email: 'bruno@ejemplo.com' })
+    );
+
+    const payload = vi.mocked(db.classes.update).mock.calls[0][1] as any;
+    expect(payload.student_id).toBe('st-2');
+    expect(result?.student?.full_name).toBe('Bruno Díaz');
+    // Se movió la clase: hay que actualizar los totales del alumno viejo y del nuevo.
+    expect(db.students.getWithStats).toHaveBeenCalledWith('st-1');
+    expect(db.students.getWithStats).toHaveBeenCalledWith('st-2');
+  });
+
+  it('no manda student_id si el alumno no cambió', async () => {
+    const store = useClassesStore();
+    store.classes = [classWithStudent()];
+    useStudentsStore().students = [student];
+
+    await store.update('c-1', formData({ student_id: 'st-1' }));
+
+    const payload = vi.mocked(db.classes.update).mock.calls[0][1] as any;
+    expect(payload).not.toHaveProperty('student_id');
+    expect(db.students.getWithStats).not.toHaveBeenCalled();
+  });
+
+  it('crea al alumno si se escribió un nombre que no existe', async () => {
+    vi.mocked(db.students.create).mockResolvedValue({
+      data: { ...student, id: 'st-9', full_name: 'Nuevo Alumno' },
+      error: null,
+    } as any);
+    const store = useClassesStore();
+    store.classes = [classWithStudent()];
+    useStudentsStore().students = [student];
+
+    await store.update('c-1', formData({ student_name: 'Nuevo Alumno', student_email: '' }));
+
+    const payload = vi.mocked(db.classes.update).mock.calls[0][1] as any;
+    expect(payload.student_id).toBe('st-9');
+  });
+
+  it('no toca el alumno si la clase viene sin la relación cargada', async () => {
+    const store = useClassesStore();
+    // Sin `student`: no se sabe quién es, así que no se arriesga a crear un duplicado.
+    store.classes = [makeClass()];
+    useStudentsStore().students = [];
+
+    await store.update('c-1', formData());
+
+    const payload = vi.mocked(db.classes.update).mock.calls[0][1] as any;
+    expect(payload).not.toHaveProperty('student_id');
+    expect(db.students.create).not.toHaveBeenCalled();
+  });
+});
+
 describe('pago confirmado (definitivo)', () => {
   it('permite marcar como pagada una clase pendiente', async () => {
     const store = useClassesStore();
