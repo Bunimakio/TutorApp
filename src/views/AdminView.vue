@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useStudentsStore } from '@/stores/students';
-import { useUIStore } from '@/stores/ui';
 import { StudentList, StudentDetail, StudentFormModal } from '@/components/admin';
 import { ArrowLeft } from 'lucide-vue-next';
 
 const studentsStore = useStudentsStore();
-const uiStore = useUIStore();
 
 const showStudentForm = ref(false);
 const editingStudent = ref<any>(null);
@@ -56,18 +54,6 @@ async function handleStudentSubmit(data: any): Promise<void> {
     console.error('[AdminView] Error al guardar alumno:', e);
   }
 }
-
-async function handleNewClassForStudent(student: any): Promise<void> {
-  // Navegar al calendario con el formulario de clase abierto
-  uiStore.setActiveView('calendar');
-  const { useClassesStore } = await import('@/stores/classes');
-  const classesStore = useClassesStore();
-  classesStore.openForm('create', null, {
-    day: 1,
-    time: '09:00',
-    date: new Date().toISOString().split('T')[0],
-  });
-}
 </script>
 
 <template>
@@ -113,8 +99,6 @@ async function handleNewClassForStudent(student: any): Promise<void> {
             :recent-classes="studentsStore.recentClasses"
             :paid-total="studentsStore.paidTotal"
             @edit="handleEditStudent"
-            @new-class="handleNewClassForStudent"
-            @view-classes="handleNewClassForStudent"
           />
         </div>
       </div>

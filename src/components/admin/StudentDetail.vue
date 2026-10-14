@@ -6,7 +6,7 @@ import Avatar from '@/components/ui/Avatar.vue';
 import Badge from '@/components/ui/Badge.vue';
 import Button from '@/components/ui/Button.vue';
 import Card from '@/components/ui/Card.vue';
-import { Mail, Phone, Calendar, Clock, DollarSign, BookOpen, Trash2, Edit, Eye, AlertCircle, CheckCircle, Plus, FileText, ArrowUpRight, User } from 'lucide-vue-next';
+import { Mail, Phone, Calendar, Clock, DollarSign, BookOpen, Trash2, Edit, AlertCircle, CheckCircle, FileText, ArrowUpRight, User } from 'lucide-vue-next';
 
 const studentsStore = useStudentsStore();
 const classesStore = useClassesStore();
@@ -22,8 +22,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   edit: [student: any];
   delete: [studentId: string];
-  viewClasses: [studentId: string];
-  newClass: [student: any];
 }>();
 
 const activeTab = ref<'resumen' | 'clases' | 'pagos'>('resumen');
@@ -58,12 +56,6 @@ function getStatusBadge(status: string) {
   }
 }
 
-function handleNewClass(): void {
-  if (props.student) {
-    emit('newClass', props.student);
-  }
-}
-
 function timeToMinutes(timeStr: string): number {
   const [h, m] = timeStr.split(':').map(Number);
   return h * 60 + m;
@@ -93,9 +85,7 @@ function timeToMinutes(timeStr: string): number {
         </div>
       </div>
       <div class="flex items-center gap-2 flex-wrap xl:justify-end">
-        <Button variant="primary" icon="Plus" @click="handleNewClass" class="gap-1.5">Nueva clase</Button>
         <Button variant="outline" icon="Edit" @click="$emit('edit', props.student)" class="gap-1.5">Editar</Button>
-        <Button variant="ghost" icon="Eye" @click="$emit('viewClasses', props.student.id)" class="gap-1.5">Ver todas</Button>
       </div>
     </div>
 
