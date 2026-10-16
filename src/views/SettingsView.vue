@@ -69,13 +69,6 @@ async function handleForceSync(): Promise<void> {
   }
 }
 
-function handleClearOfflineData(): void {
-  if (confirm('¿Eliminar todos los datos locales? Se volverán a descargar del servidor.')) {
-    // TODO: Implementar limpieza de IndexedDB
-    uiStore.notify('info', 'Función próximamente');
-  }
-}
-
 const exportLoading = ref(false);
 
 async function handleExportData(): Promise<void> {
@@ -261,9 +254,6 @@ async function handleDeleteDemo(): Promise<void> {
           </Button>
           <Button variant="outline" icon="Download" @click="handleExportData" class="gap-1.5" :loading="exportLoading">
             Exportar datos
-          </Button>
-          <Button variant="ghost" icon="Trash2" @click="handleClearOfflineData" class="gap-1.5 text-red-600 hover:text-red-700">
-            Limpiar datos locales
           </Button>
         </div>
       </Card>
