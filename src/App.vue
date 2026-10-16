@@ -1,16 +1,17 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { useUIStore } from '@/stores/ui';
 import { useClassesStore } from '@/stores/classes';
 import { useSyncStore } from '@/stores/sync';
-import { RouterView, RouterLink } from 'vue-router';
+import { RouterView, RouterLink, useRouter } from 'vue-router';
 import { LayoutDashboard, Users, BookOpen, Wallet, Settings, LogOut, Menu, X, ChevronDown, Wifi, WifiOff, AlertCircle, CheckCircle, RefreshCw } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
 const uiStore = useUIStore();
 const classesStore = useClassesStore();
 const syncStore = useSyncStore();
+const router = useRouter();
 
 const mobileMenuOpen = ref(false);
 
@@ -18,6 +19,21 @@ onMounted(async () => {
   await authStore.initialize();
   await syncStore.initialize();
 });
+
+// Al cerrar sesión (o si la sesión vence) volver a la pantalla de login.
+// El guard del router sólo actúa al cambiar de ruta, así que sin esto el
+// usuario quedaba en la pantalla actual después de desloguearse.
+watch(
+  () => authStore.isAuthenticated,
+  (isAuth, wasAuth) => {
+    if (wasAuth && !isAuth) {
+      mobileMenuOpen.value = false;
+      if (router.currentRoute.value.name !== 'login') {
+        router.push({ name: 'login' });
+      }
+    }
+  }
+);
 
 function handleSignOut(): void {
   authStore.signOut();
