@@ -8,6 +8,8 @@ import { useClassesStore } from '@/stores/classes';
 import { useStudentsStore } from '@/stores/students';
 import { useSubjectsStore } from '@/stores/subjects';
 import { loadDemoData, deleteDemoData } from '@/lib/demo';
+import { db } from '@/lib/supabase';
+import { buildExportPayload, downloadJson, exportFileName } from '@/lib/export';
 import Button from '@/components/ui/Button.vue';
 import Input from '@/components/ui/Input.vue';
 import Card from '@/components/ui/Card.vue';
@@ -23,7 +25,6 @@ const subjectsStore = useSubjectsStore();
 
 const newPassword = ref('');
 const confirmPassword = ref('');
-const currentPassword = ref('');
 const showPasswordChange = ref(false);
 const passwordError = ref('');
 
@@ -50,7 +51,6 @@ async function handlePasswordChange(): Promise<void> {
     await authStore.updatePassword(newPassword.value);
     newPassword.value = '';
     confirmPassword.value = '';
-    currentPassword.value = '';
     showPasswordChange.value = false;
     uiStore.notify('success', 'Contraseña actualizada correctamente');
   } catch (e: any) {
@@ -76,9 +76,33 @@ function handleClearOfflineData(): void {
   }
 }
 
-function handleExportData(): void {
-  // TODO: Exportar datos a JSON
-  uiStore.notify('info', 'Función próximamente');
+const exportLoading = ref(false);
+
+async function handleExportData(): Promise<void> {
+  exportLoading.value = true;
+  try {
+    const [students, subjects, classes] = await Promise.all([
+      db.students.getAll(),
+      db.subjects.getAll(),
+      db.classes.getAll(),
+    ]);
+
+    const payload = buildExportPayload({
+      students: students.data ?? [],
+      subjects: subjects.data ?? [],
+      classes: classes.data ?? [],
+    });
+
+    downloadJson(exportFileName(), payload);
+    uiStore.notify(
+      'success',
+      `Respaldo descargado: ${payload.counts.students} alumnos, ${payload.counts.subjects} asignaturas, ${payload.counts.classes} clases`
+    );
+  } catch (e: any) {
+    uiStore.notify('error', e?.message ? `No se pudo exportar: ${e.message}` : 'No se pudieron exportar los datos');
+  } finally {
+    exportLoading.value = false;
+  }
 }
 
 // Datos de prueba (alumnos, clases y pagos de ejemplo)
@@ -150,13 +174,6 @@ async function handleDeleteDemo(): Promise<void> {
           </div>
 
           <div v-else class="space-y-4">
-            <Input
-              v-model="currentPassword"
-              type="password"
-              label="Contraseña actual"
-              placeholder="••••••••"
-              icon="Lock"
-            />
             <Input
               v-model="newPassword"
               type="password"
@@ -242,7 +259,7 @@ async function handleDeleteDemo(): Promise<void> {
           <Button variant="outline" icon="RefreshCw" @click="handleForceSync" class="gap-1.5" :loading="syncStore.isSyncing">
             Forzar sincronización
           </Button>
-          <Button variant="outline" icon="Download" @click="handleExportData" class="gap-1.5">
+          <Button variant="outline" icon="Download" @click="handleExportData" class="gap-1.5" :loading="exportLoading">
             Exportar datos
           </Button>
           <Button variant="ghost" icon="Trash2" @click="handleClearOfflineData" class="gap-1.5 text-red-600 hover:text-red-700">

@@ -174,6 +174,14 @@ export const db = {
 
   // Classes
   classes: {
+    // Todas las clases (para el respaldo / exportación de datos).
+    getAll: () =>
+      supabase
+        .from('classes')
+        .select('*')
+        .order('date')
+        .order('start_time'),
+
     getByWeek: (weekStart: string, weekEnd: string) =>
       supabase
         .from('classes')
